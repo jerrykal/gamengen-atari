@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding=utf-8
 # Copyright 2025 The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -101,19 +100,13 @@ def log_validation(
             autocast_ctx = torch.autocast(accelerator.device.type)
 
         with autocast_ctx:
-            context_images = (
-                batch["pixel_values"][i][:-1, ...].unsqueeze(0).to(accelerator.device)
-            )
-            context_actions = (
-                batch["input_ids"][i][:-1, ...].unsqueeze(0).to(accelerator.device)
-            )
+            context_images = batch["pixel_values"][i][:-1, ...].unsqueeze(0).to(accelerator.device)
+            context_actions = batch["input_ids"][i][:-1, ...].unsqueeze(0).to(accelerator.device)
 
             if args.seed is None:
                 generator = None
             else:
-                generator = torch.Generator(device=accelerator.device).manual_seed(
-                    args.seed
-                )
+                generator = torch.Generator(device=accelerator.device).manual_seed(args.seed)
 
             generated_image = pipeline(
                 context_images=context_images,
@@ -150,12 +143,10 @@ def log_validation(
             tracker.log(
                 {
                     "generated_images": [
-                        wandb.Image(image, caption=f"Generated Image {i}")
-                        for i, image in enumerate(generated_images)
+                        wandb.Image(image, caption=f"Generated Image {i}") for i, image in enumerate(generated_images)
                     ],
                     "target_images": [
-                        wandb.Image(image, caption=f"Target Image {i}")
-                        for i, image in enumerate(target_images)
+                        wandb.Image(image, caption=f"Target Image {i}") for i, image in enumerate(target_images)
                     ],
                 }
             )
@@ -167,9 +158,7 @@ def log_validation(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Training script for GameNGen diffusion pipeline."
-    )
+    parser = argparse.ArgumentParser(description="Training script for GameNGen diffusion pipeline.")
     parser.add_argument(
         "--pretrained_model_name_or_path",
         type=str,
@@ -227,9 +216,7 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="The directory where the downloaded models and datasets will be stored.",
     )
-    parser.add_argument(
-        "--seed", type=int, default=None, help="A seed for reproducible training."
-    )
+    parser.add_argument("--seed", type=int, default=None, help="A seed for reproducible training.")
     parser.add_argument(
         "--train_batch_size",
         type=int,
@@ -337,9 +324,7 @@ def parse_args() -> argparse.Namespace:
         default=0.999,
         help="The beta2 parameter for the Adam optimizer.",
     )
-    parser.add_argument(
-        "--adam_weight_decay", type=float, default=1e-2, help="Weight decay to use."
-    )
+    parser.add_argument("--adam_weight_decay", type=float, default=1e-2, help="Weight decay to use.")
     parser.add_argument(
         "--adam_epsilon",
         type=float,
@@ -376,9 +361,7 @@ def parse_args() -> argparse.Namespace:
         default=1.0,
         help="The d parameter for the Adafactor optimizer.",
     )
-    parser.add_argument(
-        "--max_grad_norm", default=1.0, type=float, help="Max gradient norm."
-    )
+    parser.add_argument("--max_grad_norm", default=1.0, type=float, help="Max gradient norm.")
     parser.add_argument(
         "--prediction_type",
         type=str,
@@ -449,9 +432,7 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Whether or not to use xformers.",
     )
-    parser.add_argument(
-        "--noise_offset", type=float, default=0, help="The scale of noise offset."
-    )
+    parser.add_argument("--noise_offset", type=float, default=0, help="The scale of noise offset.")
     parser.add_argument(
         "--validation_steps",
         type=int,
@@ -548,9 +529,7 @@ def train() -> None:
 
     logging_dir = os.path.join(args.output_dir, args.logging_dir)
 
-    accelerator_project_config = ProjectConfiguration(
-        project_dir=args.output_dir, logging_dir=logging_dir
-    )
+    accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir, logging_dir=logging_dir)
 
     accelerator = Accelerator(
         gradient_accumulation_steps=args.gradient_accumulation_steps,
@@ -626,9 +605,7 @@ def train() -> None:
                 )
             unet.enable_xformers_memory_efficient_attention()
         else:
-            raise ValueError(
-                "xformers is not available. Make sure it is installed correctly"
-            )
+            raise ValueError("xformers is not available. Make sure it is installed correctly")
 
     # `accelerate` 0.16.0 will have better support for customized saving
     if version.parse(accelerate.__version__) >= version.parse("0.16.0"):
@@ -639,9 +616,7 @@ def train() -> None:
                     if isinstance(model, UNet2DConditionModel):
                         model.save_pretrained(os.path.join(output_dir, "unet"))
                     elif isinstance(model, ActionEmbeddingModel):
-                        model.save_pretrained(
-                            os.path.join(output_dir, "action_embedding")
-                        )
+                        model.save_pretrained(os.path.join(output_dir, "action_embedding"))
                     else:
                         raise ValueError(f"Unknown model type: {type(model)}")
 
@@ -654,13 +629,9 @@ def train() -> None:
                 model = models.pop()
 
                 if isinstance(model, UNet2DConditionModel):
-                    load_model = UNet2DConditionModel.from_pretrained(
-                        input_dir, subfolder="unet"
-                    )
+                    load_model = UNet2DConditionModel.from_pretrained(input_dir, subfolder="unet")
                 elif isinstance(model, ActionEmbeddingModel):
-                    load_model = ActionEmbeddingModel.from_pretrained(
-                        input_dir, subfolder="action_embedding"
-                    )
+                    load_model = ActionEmbeddingModel.from_pretrained(input_dir, subfolder="action_embedding")
                 else:
                     raise ValueError(f"Unknown model type: {type(model)}")
 
@@ -682,10 +653,7 @@ def train() -> None:
 
     if args.scale_lr:
         args.learning_rate = (
-            args.learning_rate
-            * args.gradient_accumulation_steps
-            * args.train_batch_size
-            * accelerator.num_processes
+            args.learning_rate * args.gradient_accumulation_steps * args.train_batch_size * accelerator.num_processes
         )
 
     # Initialize the optimizer
@@ -734,21 +702,13 @@ def train() -> None:
     # Check the PR https://github.com/huggingface/diffusers/pull/8312 for detailed explanation.
     num_warmup_steps_for_scheduler = args.lr_warmup_steps * accelerator.num_processes
     if args.max_train_steps is None:
-        len_train_dataloader_after_sharding = math.ceil(
-            len(train_dataloader) / accelerator.num_processes
-        )
-        num_update_steps_per_epoch = math.ceil(
-            len_train_dataloader_after_sharding / args.gradient_accumulation_steps
-        )
+        len_train_dataloader_after_sharding = math.ceil(len(train_dataloader) / accelerator.num_processes)
+        num_update_steps_per_epoch = math.ceil(len_train_dataloader_after_sharding / args.gradient_accumulation_steps)
         num_training_steps_for_scheduler = (
-            args.num_train_epochs
-            * num_update_steps_per_epoch
-            * accelerator.num_processes
+            args.num_train_epochs * num_update_steps_per_epoch * accelerator.num_processes
         )
     else:
-        num_training_steps_for_scheduler = (
-            args.max_train_steps * accelerator.num_processes
-        )
+        num_training_steps_for_scheduler = args.max_train_steps * accelerator.num_processes
 
     lr_scheduler = get_scheduler(
         args.lr_scheduler,
@@ -758,10 +718,8 @@ def train() -> None:
     )
 
     # Prepare everything with our `accelerator`.
-    unet, action_embedding, optimizer, train_dataloader, lr_scheduler = (
-        accelerator.prepare(
-            unet, action_embedding, optimizer, train_dataloader, lr_scheduler
-        )
+    unet, action_embedding, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
+        unet, action_embedding, optimizer, train_dataloader, lr_scheduler
     )
 
     # For mixed precision training we cast all non-trainable weights (vae, non-lora text_encoder and non-lora unet) to half-precision
@@ -778,15 +736,10 @@ def train() -> None:
     vae.to(accelerator.device, dtype=weight_dtype)
 
     # We need to recalculate our total training steps as the size of the training dataloader may have changed.
-    num_update_steps_per_epoch = math.ceil(
-        len(train_dataloader) / args.gradient_accumulation_steps
-    )
+    num_update_steps_per_epoch = math.ceil(len(train_dataloader) / args.gradient_accumulation_steps)
     if args.max_train_steps is None:
         args.max_train_steps = args.num_train_epochs * num_update_steps_per_epoch
-        if (
-            num_training_steps_for_scheduler
-            != args.max_train_steps * accelerator.num_processes
-        ):
+        if num_training_steps_for_scheduler != args.max_train_steps * accelerator.num_processes:
             logger.warning(
                 f"The length of the 'train_dataloader' after 'accelerator.prepare' ({len(train_dataloader)}) does not match "
                 f"the expected length ({len_train_dataloader_after_sharding}) when the learning rate scheduler was created. "
@@ -808,19 +761,13 @@ def train() -> None:
         return model
 
     # Train!
-    total_batch_size = (
-        args.train_batch_size
-        * accelerator.num_processes
-        * args.gradient_accumulation_steps
-    )
+    total_batch_size = args.train_batch_size * accelerator.num_processes * args.gradient_accumulation_steps
 
     logger.info("***** Running training *****")
     logger.info(f"  Num examples = {len(train_dataset)}")
     logger.info(f"  Num Epochs = {args.num_train_epochs}")
     logger.info(f"  Instantaneous batch size per device = {args.train_batch_size}")
-    logger.info(
-        f"  Total train batch size (w. parallel, distributed & accumulation) = {total_batch_size}"
-    )
+    logger.info(f"  Total train batch size (w. parallel, distributed & accumulation) = {total_batch_size}")
     logger.info(f"  Gradient Accumulation steps = {args.gradient_accumulation_steps}")
     logger.info(f"  Total optimization steps = {args.max_train_steps}")
     global_step = 0
@@ -869,9 +816,7 @@ def train() -> None:
                 pixel_values = batch["pixel_values"].to(weight_dtype)
                 pixel_values = rearrange(pixel_values, "b l c h w -> (b l) c h w")
                 latents = vae.encode(pixel_values).latent_dist.sample()
-                latents = rearrange(
-                    latents, "(b l) c h w -> b l c h w", l=args.context_length + 1
-                )
+                latents = rearrange(latents, "(b l) c h w -> b l c h w", l=args.context_length + 1)
                 latents = latents * vae.config.scaling_factor
 
                 # Sample noise that we'll add to the latents, NOTE: we only sample noise for the last frame
@@ -896,22 +841,15 @@ def train() -> None:
                 # Add noise to the latents according to the noise magnitude at each timestep
                 # (this is the forward diffusion process)
                 noisy_latents = latents.clone()
-                noisy_latents[:, -1:] = noise_scheduler.add_noise(
-                    latents[:, -1:], noise, timesteps
-                )
+                noisy_latents[:, -1:] = noise_scheduler.add_noise(latents[:, -1:], noise, timesteps)
 
                 # Augment the context frames with varying noise to simulate autoregressive drift
                 # See section 3.2.1 of the GameNGen paper
-                noise_level = (
-                    torch.rand(bsz, device=latents.device) * args.max_noise_level
-                )
+                noise_level = torch.rand(bsz, device=latents.device) * args.max_noise_level
                 context_noise = (
-                    torch.randn_like(latents[:, : args.context_length])
-                    * noise_level[:, None, None, None, None]
+                    torch.randn_like(latents[:, : args.context_length]) * noise_level[:, None, None, None, None]
                 )
-                noisy_latents[:, : args.context_length] = (
-                    latents[:, : args.context_length] + context_noise
-                )
+                noisy_latents[:, : args.context_length] = latents[:, : args.context_length] + context_noise
 
                 # Discretize the noise level
                 class_labels = (
@@ -936,18 +874,14 @@ def train() -> None:
                 # Get the target for loss depending on the prediction type
                 if args.prediction_type is not None:
                     # set prediction_type of scheduler if defined
-                    noise_scheduler.register_to_config(
-                        prediction_type=args.prediction_type
-                    )
+                    noise_scheduler.register_to_config(prediction_type=args.prediction_type)
 
                 if noise_scheduler.config.prediction_type == "epsilon":
                     target = noise
                 elif noise_scheduler.config.prediction_type == "v_prediction":
                     target = noise_scheduler.get_velocity(latents, noise, timesteps)
                 else:
-                    raise ValueError(
-                        f"Unknown prediction type {noise_scheduler.config.prediction_type}"
-                    )
+                    raise ValueError(f"Unknown prediction type {noise_scheduler.config.prediction_type}")
 
                 # Set last frame as target
                 target = target[:, -1]
@@ -974,29 +908,22 @@ def train() -> None:
                 )[0]
 
                 if args.snr_gamma is None:
-                    loss = F.mse_loss(
-                        model_pred.float(), target.float(), reduction="mean"
-                    )
+                    loss = F.mse_loss(model_pred.float(), target.float(), reduction="mean")
                 else:
                     # Compute loss-weights as per Section 3.4 of https://arxiv.org/abs/2303.09556.
                     # Since we predict the noise instead of x_0, the original formulation is slightly changed.
                     # This is discussed in Section 4.2 of the same paper.
                     snr = compute_snr(noise_scheduler, timesteps)
-                    mse_loss_weights = torch.stack(
-                        [snr, args.snr_gamma * torch.ones_like(timesteps)], dim=1
-                    ).min(dim=1)[0]
+                    mse_loss_weights = torch.stack([snr, args.snr_gamma * torch.ones_like(timesteps)], dim=1).min(
+                        dim=1
+                    )[0]
                     if noise_scheduler.config.prediction_type == "epsilon":
                         mse_loss_weights = mse_loss_weights / snr
                     elif noise_scheduler.config.prediction_type == "v_prediction":
                         mse_loss_weights = mse_loss_weights / (snr + 1)
 
-                    loss = F.mse_loss(
-                        model_pred.float(), target.float(), reduction="none"
-                    )
-                    loss = (
-                        loss.mean(dim=list(range(1, len(loss.shape))))
-                        * mse_loss_weights
-                    )
+                    loss = F.mse_loss(model_pred.float(), target.float(), reduction="none")
+                    loss = loss.mean(dim=list(range(1, len(loss.shape)))) * mse_loss_weights
                     loss = loss.mean()
 
                 # Gather the losses across all processes for logging (if we use distributed training).
@@ -1007,9 +934,7 @@ def train() -> None:
                 accelerator.backward(loss)
                 if accelerator.sync_gradients:
                     accelerator.clip_grad_norm_(unet.parameters(), args.max_grad_norm)
-                    accelerator.clip_grad_norm_(
-                        action_embedding.parameters(), args.max_grad_norm
-                    )
+                    accelerator.clip_grad_norm_(action_embedding.parameters(), args.max_grad_norm)
                 optimizer.step()
                 lr_scheduler.step()
                 optimizer.zero_grad()
@@ -1024,9 +949,7 @@ def train() -> None:
                 if accelerator.is_main_process:
                     if global_step % args.validation_steps == 0:
                         # Use the first two examples from current batch for validation
-                        validation_batch = {
-                            key: value[:2] for key, value in batch.items()
-                        }
+                        validation_batch = {key: value[:2] for key, value in batch.items()}
                         log_validation(
                             validation_batch,
                             vae,
@@ -1044,36 +967,24 @@ def train() -> None:
                         # _before_ saving state, check if this save would set us over the `checkpoints_total_limit`
                         if args.checkpoints_total_limit is not None:
                             checkpoints = os.listdir(args.output_dir)
-                            checkpoints = [
-                                d for d in checkpoints if d.startswith("checkpoint")
-                            ]
-                            checkpoints = sorted(
-                                checkpoints, key=lambda x: int(x.split("-")[1])
-                            )
+                            checkpoints = [d for d in checkpoints if d.startswith("checkpoint")]
+                            checkpoints = sorted(checkpoints, key=lambda x: int(x.split("-")[1]))
 
                             # before we save the new checkpoint, we need to have at _most_ `checkpoints_total_limit - 1` checkpoints
                             if len(checkpoints) >= args.checkpoints_total_limit:
-                                num_to_remove = (
-                                    len(checkpoints) - args.checkpoints_total_limit + 1
-                                )
+                                num_to_remove = len(checkpoints) - args.checkpoints_total_limit + 1
                                 removing_checkpoints = checkpoints[0:num_to_remove]
 
                                 logger.info(
                                     f"{len(checkpoints)} checkpoints already exist, removing {len(removing_checkpoints)} checkpoints"
                                 )
-                                logger.info(
-                                    f"removing checkpoints: {', '.join(removing_checkpoints)}"
-                                )
+                                logger.info(f"removing checkpoints: {', '.join(removing_checkpoints)}")
 
                                 for removing_checkpoint in removing_checkpoints:
-                                    removing_checkpoint = os.path.join(
-                                        args.output_dir, removing_checkpoint
-                                    )
+                                    removing_checkpoint = os.path.join(args.output_dir, removing_checkpoint)
                                     shutil.rmtree(removing_checkpoint)
 
-                        save_path = os.path.join(
-                            args.output_dir, f"checkpoint-{global_step}"
-                        )
+                        save_path = os.path.join(args.output_dir, f"checkpoint-{global_step}")
                         accelerator.save_state(save_path)
                         logger.info(f"Saved state to {save_path}")
 

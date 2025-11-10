@@ -59,9 +59,7 @@ class GameplayDataset(Dataset):
         #       The original paper pads the VizDoom resolution of 320x240 to 320x256 instead.
         self._frame_transform = transforms.Compose(
             [
-                transforms.Resize(
-                    (width, height), interpolation=transforms.InterpolationMode.BICUBIC
-                ),
+                transforms.Resize((width, height), interpolation=transforms.InterpolationMode.BICUBIC),
                 transforms.ToTensor(),
                 transforms.Normalize([0.5], [0.5]),
             ]
@@ -73,12 +71,7 @@ class GameplayDataset(Dataset):
         return self._action_dim
 
     def _transform(self, example: dict[str, Any]) -> dict[str, Any]:
-        frames = torch.stack(
-            [
-                self._frame_transform(Image.open(io.BytesIO(frame)))
-                for frame in example["frame"]
-            ]
-        )
+        frames = torch.stack([self._frame_transform(Image.open(io.BytesIO(frame))) for frame in example["frame"]])
         actions = torch.tensor(example["action"])
         return {
             "pixel_values": frames,
@@ -92,9 +85,7 @@ class GameplayDataset(Dataset):
 
     def __getitem__(self, idx: int) -> dict[str, Any]:
         step_id = self.dataset[idx]["step_id"]
-        start_idx = idx - (
-            self.context_length if step_id > self.context_length else step_id
-        )
+        start_idx = idx - (self.context_length if step_id > self.context_length else step_id)
 
         pixel_values = self.dataset[start_idx : idx + 1]["pixel_values"]
         input_ids = self.dataset[start_idx : idx + 1]["input_ids"]
@@ -111,9 +102,7 @@ class GameplayDataset(Dataset):
             )
 
             # NOTE: input_ids are padded with zeros, which are considered as the default value for NOOP
-            pad_input_ids = torch.zeros(
-                pad_len, dtype=input_ids.dtype, device=input_ids.device
-            )
+            pad_input_ids = torch.zeros(pad_len, dtype=input_ids.dtype, device=input_ids.device)
 
             pixel_values = torch.cat([pad_pixel_values, pixel_values], dim=0)
             input_ids = torch.cat([pad_input_ids, input_ids], dim=0)

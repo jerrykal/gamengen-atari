@@ -35,20 +35,14 @@ def get_models(
     variant: str | None = None,
 ) -> tuple[UNet2DConditionModel, AutoencoderKL, DDIMScheduler, ActionEmbeddingModel]:
     # Use DDIM scheduler and v-prediction following the GameNGen paper
-    noise_scheduler = DDIMScheduler.from_pretrained(
-        pretrained_model_name_or_path, subfolder="scheduler"
-    )
+    noise_scheduler = DDIMScheduler.from_pretrained(pretrained_model_name_or_path, subfolder="scheduler")
     noise_scheduler.register_to_config(prediction_type="v_prediction")
 
     def deepspeed_zero_init_disabled_context_manager():
         """
         returns either a context list that includes one that will disable zero.Init or an empty context list
         """
-        deepspeed_plugin = (
-            AcceleratorState().deepspeed_plugin
-            if accelerate.state.is_initialized()
-            else None
-        )
+        deepspeed_plugin = AcceleratorState().deepspeed_plugin if accelerate.state.is_initialized() else None
         if deepspeed_plugin is None:
             return []
 
@@ -109,9 +103,7 @@ def get_models(
         # Add class_embedding for noise augmentation
         if num_noise_buckets > 0:
             unet.register_to_config(num_class_embeds=num_noise_buckets)
-            unet.class_embedding = nn.Embedding(
-                num_noise_buckets, unet.time_embedding.linear_2.out_features
-            )
+            unet.class_embedding = nn.Embedding(num_noise_buckets, unet.time_embedding.linear_2.out_features)
 
     return unet, vae, noise_scheduler, action_embedding
 

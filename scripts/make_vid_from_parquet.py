@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw, ImageFont
 # Load a font
 try:
     font = ImageFont.truetype("arial.ttf", 20)
-except IOError:
+except OSError:
     font = ImageFont.load_default()
 
 

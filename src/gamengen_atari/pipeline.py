@@ -9,7 +9,6 @@ from diffusers.pipelines.pipeline_utils import DiffusionPipeline, ImagePipelineO
 from diffusers.schedulers import KarrasDiffusionSchedulers
 from diffusers.utils.torch_utils import randn_tensor
 from einops import rearrange
-
 from gamengen.models import ActionEmbeddingModel
 
 
@@ -49,9 +48,7 @@ class GameNGenPipeline(DiffusionPipeline):
 
         self.vae_scale_factor = 2 ** (len(self.vae.config.block_out_channels) - 1)
         self.image_processor = VaeImageProcessor(vae_scale_factor=self.vae_scale_factor)
-        self.expected_context_length = (
-            self.unet.config.in_channels // self.unet.config.out_channels - 1
-        )
+        self.expected_context_length = self.unet.config.in_channels // self.unet.config.out_channels - 1
 
     @property
     def guidance_scale(self) -> float:
@@ -67,9 +64,7 @@ class GameNGenPipeline(DiffusionPipeline):
         )
         images = rearrange(images, "b l c h w -> (b l) c h w")
         latents = self.vae.encode(images).latent_dist.sample()
-        latents = rearrange(
-            latents, "(b l) c h w -> b l c h w", l=self.expected_context_length
-        )
+        latents = rearrange(latents, "(b l) c h w -> b l c h w", l=self.expected_context_length)
         latents = latents * self.vae.config.scaling_factor
         return latents
 
@@ -113,9 +108,7 @@ class GameNGenPipeline(DiffusionPipeline):
         # 1. Encode past frames
         # context_latents shape -> (batch_size, context_length, num_channels_latents, height, width)
         if (context_latents is None) ^ (context_images is not None):
-            raise ValueError(
-                "Either context_latents or context_images must be provided, but not both"
-            )
+            raise ValueError("Either context_latents or context_images must be provided, but not both")
         if context_images is not None:
             context_latents = self.encode_context_images(context_images)
 
@@ -167,9 +160,7 @@ class GameNGenPipeline(DiffusionPipeline):
                     latent_model_input,
                     "b l c h w -> b (l c) h w",
                 )
-                latent_model_input = self.scheduler.scale_model_input(
-                    latent_model_input, t
-                )
+                latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
 
                 # Predict the noise residual
                 # TODO: Implement noise augmentation
@@ -184,24 +175,18 @@ class GameNGenPipeline(DiffusionPipeline):
                 # Peform guidance
                 if self.do_classifier_free_guidance:
                     noise_pred_uncond, noise_pred_cond = noise_pred.chunk(2)
-                    noise_pred = noise_pred_uncond + guidance_scale * (
-                        noise_pred_cond - noise_pred_uncond
-                    )
+                    noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_cond - noise_pred_uncond)
 
                 # Denoise the last frame which is the next frame to be generated
                 next_frame_latent = latents[:, -1]
-                denoised_next_frame_latent = self.scheduler.step(
-                    noise_pred, t, next_frame_latent, return_dict=False
-                )[0]
+                denoised_next_frame_latent = self.scheduler.step(noise_pred, t, next_frame_latent, return_dict=False)[0]
                 latents[:, -1] = denoised_next_frame_latent
 
                 progress_bar.update()
 
         # 6. Decode and postprocess the latents
         new_latents = latents[:, -1:]
-        images = self.vae.decode(
-            new_latents.squeeze(1) / self.vae.config.scaling_factor, return_dict=False
-        )[0]
+        images = self.vae.decode(new_latents.squeeze(1) / self.vae.config.scaling_factor, return_dict=False)[0]
         images = self.image_processor.postprocess(
             images, output_type=output_type, do_denormalize=[True] * images.shape[0]
         )

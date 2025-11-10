@@ -44,9 +44,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if os.path.isdir(args.output_dir) and os.listdir(args.output_dir):
-        raise ValueError(
-            f"Output directory {args.output_dir} already exists and is not empty."
-        )
+        raise ValueError(f"Output directory {args.output_dir} already exists and is not empty.")
     os.makedirs(args.output_dir, exist_ok=True)
 
     # Data are shuffled at file level, since each file contains gameplay trajectory
@@ -71,12 +69,8 @@ def main() -> None:
         # The trajectory from the last episode in the train set could be split between the train and test sets.
         # Therefore, we move it from the test set to the train set.
         episode_end = dataset["test"]["step_id"].index(0)
-        dataset["train"] = concatenate_datasets(
-            [dataset["train"], dataset["test"].select(range(episode_end))]
-        )
-        dataset["test"] = dataset["test"].select(
-            range(episode_end, len(dataset["test"]))
-        )
+        dataset["train"] = concatenate_datasets([dataset["train"], dataset["test"].select(range(episode_end))])
+        dataset["test"] = dataset["test"].select(range(episode_end, len(dataset["test"])))
 
         print(f"Number of examples in train split: {len(dataset['train'])}")
         print(f"Number of examples in test split: {len(dataset['test'])}")
