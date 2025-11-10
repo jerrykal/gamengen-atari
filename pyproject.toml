@@ -1,0 +1,27 @@
+[project]
+name = "gamengen-atari"
+version = "0.1.0"
+description = "An unofficial implementation of GameNGen simulating various classic Atari games via Diffusion Model."
+readme = "README.md"
+authors = [
+    { name = "Kuei-An Lee", email = "oojerryleeoo@gmail.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "accelerate>=1.11.0",
+    "datasets>=4.4.1",
+    "diffusers[torch]>=0.35.2",
+    "imageio[ffmpeg]>=2.37.2",
+    "pyarrow>=22.0.0",
+    "rl-zoo3",
+    "stable-baselines3[extra]>=2.7.0",
+    "torchvision>=0.24.0",
+    "transformers>=4.57.1",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.0,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+rl-zoo3 = { path = "packages/rl-baselines3-zoo", editable = true }

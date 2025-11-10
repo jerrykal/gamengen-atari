@@ -1,9 +1,0 @@
--e rl-baselines3-zoo
-stable_baselines3[extra]==2.6.0
-diffusers[torch]==0.32.2
-accelerate==1.5.2
-torchvision==0.21.1
-transformers==4.50.3
-datasets==3.5.0
-pyarrow==19.0.1
-imageio[ffmpeg]==0.6.0
