@@ -1,5 +1,5 @@
 [project]
-name = "gamengen-atari"
+name = "gamengen"
 version = "0.1.0"
 description = "An unofficial implementation of GameNGen simulating various classic Atari games via Diffusion Model."
 readme = "README.md"
@@ -11,6 +11,7 @@ dependencies = [
     "accelerate>=1.11.0",
     "datasets>=4.4.1",
     "diffusers[torch]>=0.35.2",
+    "einops>=0.8.1",
     "imageio[ffmpeg]>=2.37.2",
     "pyarrow>=22.0.0",
     "rl-zoo3",
